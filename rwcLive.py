@@ -4,13 +4,13 @@ Spyder Editor
 
 This is a temporary script file.
 """
-import cv2
 from tkinter import *
 from tkinter import ttk
 import numpy as np
 import requests
 from matplotlib import pyplot as plt
 from PIL import ImageTk, Image
+import io
 
 
 class RwcLive(Tk):
@@ -58,7 +58,7 @@ class RwcLive(Tk):
         Retrieve Robotiq wrist camera image and display it in the GUI
         """
         
-        #Varaibles
+        #Variables
         ##########
         #HTTP request response
         resp=None
@@ -70,17 +70,20 @@ class RwcLive(Tk):
             resp = requests.get("http://"+self.ipValue.get()+":4242/current.jpg?type=color").content
         except:
             pass
-            
-            
-        if resp is not None:
-            image = np.asarray(bytearray(resp), dtype="uint8")
-            npImage = cv2.imdecode(image, cv2.IMREAD_COLOR)
-            pilImage=Image.fromarray(npImage)
-            tkImage = ImageTk.PhotoImage(pilImage)
-        else:
+        
+        #Check the response
+        if resp == None:
+            #If the response is empty display an error image
             pilImage=Image.open("error.jpg")
             tkImage = ImageTk.PhotoImage(pilImage)
-            
+        else:
+            #If the response is not empty format the data to get a
+            #tkinter format image
+            imageData = np.asarray(bytearray(resp), dtype="uint8")
+            pilImage=Image.open(io.BytesIO(imageData))
+            tkImage = ImageTk.PhotoImage(pilImage)
+        
+        #Refresh content of the GUI image container
         self.imgLabel.tkImage=tkImage
         self.imgLabel.configure(image=tkImage)
         self.imgLabel.after(100, self.streamVideo)
@@ -109,6 +112,6 @@ class RwcLive(Tk):
         self.imgLabel=ttk.Label(self.mainframe)
         self.imgLabel.grid(column=1, row=3, sticky=(W, E))
         
-if __name__ == "__main__": 
-    app = RwcLive()  
-    app.mainloop()
+#if __name__ == "__main__": 
+app = RwcLive()  
+app.mainloop()
